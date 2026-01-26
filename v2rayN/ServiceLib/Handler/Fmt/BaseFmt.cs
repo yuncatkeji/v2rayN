@@ -70,6 +70,14 @@ public class BaseFmt
             }
             ToUriQueryAllowInsecure(item, ref dicQuery);
         }
+        if (item.EchConfigList.IsNotEmpty())
+        {
+            dicQuery.Add("ech", Utils.UrlEncode(item.EchConfigList));
+        }
+        if (item.CertSha.IsNotEmpty())
+        {
+            dicQuery.Add("pcs", Utils.UrlEncode(item.CertSha));
+        }
 
         dicQuery.Add("type", item.Network.IsNotEmpty() ? item.Network : nameof(ETransport.tcp));
 
@@ -209,6 +217,8 @@ public class BaseFmt
         item.ShortId = GetQueryDecoded(query, "sid");
         item.SpiderX = GetQueryDecoded(query, "spx");
         item.Mldsa65Verify = GetQueryDecoded(query, "pqv");
+        item.EchConfigList = GetQueryDecoded(query, "ech");
+        item.CertSha = GetQueryDecoded(query, "pcs");
 
         if (_allowInsecureArray.Any(k => GetQueryDecoded(query, k) == "1"))
         {

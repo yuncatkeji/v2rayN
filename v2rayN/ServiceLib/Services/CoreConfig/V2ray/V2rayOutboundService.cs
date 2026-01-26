@@ -178,6 +178,18 @@ public partial class CoreConfigV2rayService
                         outbound.settings.vnext = null;
                         break;
                     }
+                case EConfigType.Hysteria2:
+                    {
+                        outbound.settings = new()
+                        {
+                            version = 2,
+                            address = node.Address,
+                            port = node.Port,
+                        };
+                        outbound.settings.vnext = null;
+                        outbound.settings.servers = null;
+                        break;
+                    }
                 case EConfigType.WireGuard:
                     {
                         var address = node.Address;
@@ -206,6 +218,10 @@ public partial class CoreConfigV2rayService
             }
 
             outbound.protocol = Global.ProtocolTypes[node.ConfigType];
+            if (node.ConfigType == EConfigType.Hysteria2)
+            {
+                outbound.protocol = "hysteria";
+            }
             await GenBoundStreamSettings(node, outbound);
         }
         catch (Exception ex)
@@ -246,7 +262,12 @@ public partial class CoreConfigV2rayService
         try
         {
             var streamSettings = outbound.streamSettings;
-            streamSettings.network = node.GetNetwork();
+            var network = node.GetNetwork();
+            if (node.ConfigType == EConfigType.Hysteria2)
+            {
+                network = "hysteria";
+            }
+            streamSettings.network = network;
             var host = node.RequestHost.TrimEx();
             var path = node.Path.TrimEx();
             var sni = node.Sni.TrimEx();
@@ -272,7 +293,9 @@ public partial class CoreConfigV2rayService
                 {
                     allowInsecure = Utils.ToBool(node.AllowInsecure.IsNullOrEmpty() ? _config.CoreBasicItem.DefAllowInsecure.ToString().ToLower() : node.AllowInsecure),
                     alpn = node.GetAlpn(),
-                    fingerprint = node.Fingerprint.IsNullOrEmpty() ? _config.CoreBasicItem.DefFingerprint : node.Fingerprint
+                    fingerprint = node.Fingerprint.IsNullOrEmpty() ? _config.CoreBasicItem.DefFingerprint : node.Fingerprint,
+                    echConfigList = node.EchConfigList.NullIfEmpty(),
+                    echForceQuery = node.EchForceQuery.NullIfEmpty()
                 };
                 if (sni.IsNotEmpty())
                 {
@@ -299,6 +322,10 @@ public partial class CoreConfigV2rayService
                     tlsSettings.disableSystemRoot = true;
                     tlsSettings.allowInsecure = false;
                 }
+                else if (!node.CertSha.IsNullOrEmpty())
+                {
+                    tlsSettings.pinnedPeerCertSha256 = node.CertSha;
+                }
                 streamSettings.tlsSettings = tlsSettings;
             }
 
@@ -322,7 +349,7 @@ public partial class CoreConfigV2rayService
             }
 
             //streamSettings
-            switch (node.GetNetwork())
+            switch (network)
             {
                 case nameof(ETransport.kcp):
                     KcpSettings4Ray kcpSettings = new()
@@ -340,7 +367,7 @@ public partial class CoreConfigV2rayService
                     kcpSettings.header = new Header4Ray
                     {
                         type = node.HeaderType,
-                        domain = host.IsNullOrEmpty() ? null : host
+                        domain = host.NullIfEmpty()
                     };
                     if (path.IsNotEmpty())
                     {
@@ -450,7 +477,7 @@ public partial class CoreConfigV2rayService
                 case nameof(ETransport.grpc):
                     GrpcSettings4Ray grpcSettings = new()
                     {
-                        authority = host.IsNullOrEmpty() ? null : host,
+                        authority = host.NullIfEmpty(),
                         serviceName = path,
                         multiMode = node.HeaderType == Global.GrpcMultiMode,
                         idle_timeout = _config.GrpcItem.IdleTimeout,
@@ -459,6 +486,35 @@ public partial class CoreConfigV2rayService
                         initial_windows_size = _config.GrpcItem.InitialWindowsSize,
                     };
                     streamSettings.grpcSettings = grpcSettings;
+                    break;
+
+                case "hysteria":
+                    HysteriaUdpHop4Ray? udpHop = null;
+                    if (node.Ports.IsNotEmpty() &&
+                        (node.Ports.Contains(':') || node.Ports.Contains('-') || node.Ports.Contains(',')))
+                    {
+                        udpHop = new()
+                        {
+                            ports = node.Ports.Replace(':', '-'),
+                            interval = _config.HysteriaItem.HopInterval > 0
+                                ? _config.HysteriaItem.HopInterval
+                                : null,
+                        };
+                    }
+                    HysteriaSettings4Ray hysteriaSettings = new()
+                    {
+                        version = 2,
+                        auth = node.Id,
+                        up = _config.HysteriaItem.UpMbps > 0 ? $"{_config.HysteriaItem.UpMbps}mbps" : null,
+                        down = _config.HysteriaItem.DownMbps > 0 ? $"{_config.HysteriaItem.DownMbps}mbps" : null,
+                        udphop = udpHop,
+                    };
+                    streamSettings.hysteriaSettings = hysteriaSettings;
+                    if (node.Path.IsNotEmpty())
+                    {
+                        streamSettings.udpmasks =
+                            [new() { type = "salamander", settings = new() { password = node.Path.TrimEx(), } }];
+                    }
                     break;
 
                 default:
@@ -564,7 +620,7 @@ public partial class CoreConfigV2rayService
             var fragmentOutbound = new Outbounds4Ray
             {
                 protocol = "freedom",
-                tag = $"{Global.ProxyTag}3",
+                tag = $"frag-{Global.ProxyTag}",
                 settings = new()
                 {
                     fragment = new()
