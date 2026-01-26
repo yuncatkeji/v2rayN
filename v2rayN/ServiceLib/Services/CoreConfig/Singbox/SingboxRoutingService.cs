@@ -113,7 +113,7 @@ public partial class CoreConfigSingboxService
                 clash_mode = ERuleMode.Global.ToString()
             });
 
-            var domainStrategy = _config.RoutingBasicItem.DomainStrategy4Singbox.IsNullOrEmpty() ? null : _config.RoutingBasicItem.DomainStrategy4Singbox;
+            var domainStrategy = _config.RoutingBasicItem.DomainStrategy4Singbox.NullIfEmpty();
             var defaultRouting = await ConfigHandler.GetDefaultRouting(_config);
             if (defaultRouting.DomainStrategy4Singbox.IsNotEmpty())
             {
@@ -280,9 +280,49 @@ public partial class CoreConfigSingboxService
 
             if (_config.TunModeItem.EnableTun && item.Process?.Count > 0)
             {
-                rule3.process_name = item.Process;
-                rules.Add(rule3);
-                hasDomainIp = true;
+                var ruleProcName = JsonUtils.DeepCopy(rule3);
+                var ruleProcPath = JsonUtils.DeepCopy(rule3);
+                foreach (var process in item.Process)
+                {
+                    // sing-box doesn't support this, fall back to process name match
+                    if (process is "self/" or "xray/")
+                    {
+                        ruleProcName.process_name.Add(Utils.GetExeName("sing-box"));
+                        continue;
+                    }
+
+                    if (process.Contains('/') || process.Contains('\\'))
+                    {
+                        var procPath = process;
+                        if (Utils.IsWindows())
+                        {
+                            procPath = procPath.Replace('/', '\\');
+                        }
+                        ruleProcPath.process_path.Add(procPath);
+                        continue;
+                    }
+
+                    // sing-box strictly matches the exe suffix on Windows
+                    var procName = process;
+                    if (Utils.IsWindows() && !procName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                    {
+                        procName += ".exe";
+                    }
+
+                    ruleProcName.process_name.Add(procName);
+                }
+
+                if (ruleProcName.process_name.Count > 0)
+                {
+                    rules.Add(ruleProcName);
+                    hasDomainIp = true;
+                }
+
+                if (ruleProcPath.process_path.Count > 0)
+                {
+                    rules.Add(ruleProcPath);
+                    hasDomainIp = true;
+                }
             }
 
             if (!hasDomainIp

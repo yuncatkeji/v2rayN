@@ -68,6 +68,7 @@ public class Rule4Sbox
     public List<string>? ip_cidr { get; set; }
     public List<string>? source_ip_cidr { get; set; }
     public List<string>? process_name { get; set; }
+    public List<string>? process_path { get; set; }
     public List<string>? rule_set { get; set; }
     public List<Rule4Sbox>? rules { get; set; }
     public string? action { get; set; }
@@ -182,6 +183,14 @@ public class Tls4Sbox
     public string? fragment_fallback_delay { get; set; }
     public bool? record_fragment { get; set; }
     public List<string>? certificate { get; set; }
+    public Ech4Sbox? ech { get; set; }
+}
+
+public class Ech4Sbox
+{
+    public bool enabled { get; set; }
+    public List<string>? config { get; set; }
+    public string? query_server_name { get; set; }
 }
 
 public class Multiplex4Sbox

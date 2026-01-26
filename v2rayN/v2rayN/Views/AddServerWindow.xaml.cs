@@ -23,6 +23,7 @@ public partial class AddServerWindow
         cmbFingerprint2.ItemsSource = Global.Fingerprints;
         cmbAllowInsecure.ItemsSource = Global.AllowInsecure;
         cmbAlpn.ItemsSource = Global.Alpns;
+        cmbEchForceQuery.ItemsSource = Global.EchForceQuerys;
 
         var lstStreamSecurity = new List<string>();
         lstStreamSecurity.Add(string.Empty);
@@ -69,7 +70,6 @@ public partial class AddServerWindow
                 gridHysteria2.Visibility = Visibility.Visible;
                 sepa2.Visibility = Visibility.Collapsed;
                 gridTransport.Visibility = Visibility.Collapsed;
-                cmbCoreType.IsEnabled = false;
                 cmbFingerprint.IsEnabled = false;
                 cmbFingerprint.Text = string.Empty;
                 break;
@@ -180,8 +180,13 @@ public partial class AddServerWindow
             this.Bind(ViewModel, vm => vm.SelectedSource.AllowInsecure, v => v.cmbAllowInsecure.Text).DisposeWith(disposables);
             this.Bind(ViewModel, vm => vm.SelectedSource.Fingerprint, v => v.cmbFingerprint.Text).DisposeWith(disposables);
             this.Bind(ViewModel, vm => vm.SelectedSource.Alpn, v => v.cmbAlpn.Text).DisposeWith(disposables);
+            this.Bind(ViewModel, vm => vm.CertSha, v => v.txtCertSha256Pinning.Text).DisposeWith(disposables);
             this.Bind(ViewModel, vm => vm.CertTip, v => v.labCertPinning.Text).DisposeWith(disposables);
             this.Bind(ViewModel, vm => vm.Cert, v => v.txtCert.Text).DisposeWith(disposables);
+            this.Bind(ViewModel, vm => vm.Cert, v => v.txtCert.Text).DisposeWith(disposables);
+            this.Bind(ViewModel, vm => vm.SelectedSource.EchConfigList, v => v.txtEchConfigList.Text).DisposeWith(disposables);
+            this.Bind(ViewModel, vm => vm.SelectedSource.EchForceQuery, v => v.cmbEchForceQuery.Text).DisposeWith(disposables);
+
             //reality
             this.Bind(ViewModel, vm => vm.SelectedSource.Sni, v => v.txtSNI2.Text).DisposeWith(disposables);
             this.Bind(ViewModel, vm => vm.SelectedSource.Fingerprint, v => v.cmbFingerprint2.Text).DisposeWith(disposables);
