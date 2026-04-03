@@ -3,7 +3,7 @@ namespace ServiceLib.Models;
 public class V2rayConfig
 {
     public Log4Ray log { get; set; }
-    public Dns4Ray dns { get; set; }
+    public object dns { get; set; }
     public List<Inbounds4Ray> inbounds { get; set; }
     public List<Outbounds4Ray> outbounds { get; set; }
     public Routing4Ray routing { get; set; }
@@ -105,6 +105,8 @@ public class Outbounds4Ray
 
     public string protocol { get; set; }
 
+    public string? targetStrategy { get; set; }
+
     public Outboundsettings4Ray settings { get; set; }
 
     public StreamSettings4Ray streamSettings { get; set; }
@@ -177,6 +179,8 @@ public class ServersItem4Ray
 
     public string flow { get; set; }
 
+    public bool? uot { get; set; }
+
     public List<SocksUsersItem4Ray> users { get; set; }
 }
 
@@ -206,12 +210,8 @@ public class Dns4Ray
 {
     public Dictionary<string, object>? hosts { get; set; }
     public List<object> servers { get; set; }
-    public string? clientIp { get; set; }
-    public string? queryStrategy { get; set; }
-    public bool? disableCache { get; set; }
-    public bool? disableFallback { get; set; }
-    public bool? disableFallbackIfMatch { get; set; }
-    public bool? useSystemHosts { get; set; }
+    public bool? serveStale { get; set; }
+    public bool? enableParallelQuery { get; set; }
     public string? tag { get; set; }
 }
 
@@ -222,12 +222,6 @@ public class DnsServer4Ray
     public List<string>? domains { get; set; }
     public bool? skipFallback { get; set; }
     public List<string>? expectedIPs { get; set; }
-    public List<string>? unexpectedIPs { get; set; }
-    public string? clientIp { get; set; }
-    public string? queryStrategy { get; set; }
-    public int? timeoutMs { get; set; }
-    public bool? disableCache { get; set; }
-    public bool? finalQuery { get; set; }
     public string? tag { get; set; }
 }
 
@@ -343,7 +337,7 @@ public class StreamSettings4Ray
 
     public HysteriaSettings4Ray? hysteriaSettings { get; set; }
 
-    public List<UdpMasks4Ray>? udpmasks { get; set; }
+    public object? finalmask { get; set; }
 
     public Sockopt4Ray? sockopt { get; set; }
 }
@@ -368,6 +362,7 @@ public class TlsSettings4Ray
     public bool? disableSystemRoot { get; set; }
     public string? echConfigList { get; set; }
     public string? echForceQuery { get; set; }
+    public Sockopt4Ray? echSockopt { get; set; }
 }
 
 public class CertificateSettings4Ray
@@ -388,8 +383,6 @@ public class Header4Ray
     public object request { get; set; }
 
     public object response { get; set; }
-
-    public string? domain { get; set; }
 }
 
 public class KcpSettings4Ray
@@ -407,10 +400,6 @@ public class KcpSettings4Ray
     public int readBufferSize { get; set; }
 
     public int writeBufferSize { get; set; }
-
-    public Header4Ray header { get; set; }
-
-    public string seed { get; set; }
 }
 
 public class WsSettings4Ray
@@ -432,6 +421,8 @@ public class HttpupgradeSettings4Ray
     public string? path { get; set; }
 
     public string? host { get; set; }
+
+    public Headers4Ray headers { get; set; }
 }
 
 public class XhttpSettings4Ray
@@ -467,32 +458,45 @@ public class GrpcSettings4Ray
     public int? health_check_timeout { get; set; }
     public bool? permit_without_stream { get; set; }
     public int? initial_windows_size { get; set; }
+    public string? user_agent { get; set; }
 }
 
 public class HysteriaSettings4Ray
 {
     public int version { get; set; }
     public string? auth { get; set; }
-    public string? up { get; set; }
-    public string? down { get; set; }
-    public HysteriaUdpHop4Ray? udphop { get; set; }
 }
 
-public class HysteriaUdpHop4Ray
+public class UdpHop4Ray
 {
     public string? ports { get; set; }
-    public int? interval { get; set; }
+    public string? interval { get; set; }
 }
 
-public class UdpMasks4Ray
+public class Finalmask4Ray
+{
+    public List<Mask4Ray>? udp { get; set; }
+    public QuicParams4Ray? quicParams { get; set; }
+}
+
+public class Mask4Ray
 {
     public string type { get; set; }
-    public UdpMasksSettings4Ray? settings { get; set; }
+    public MaskSettings4Ray? settings { get; set; }
 }
 
-public class UdpMasksSettings4Ray
+public class MaskSettings4Ray
 {
     public string? password { get; set; }
+    public string? domain { get; set; }
+}
+
+public class QuicParams4Ray
+{
+    public string? congestion { get; set; }
+    public string? brutalUp { get; set; }
+    public string? brutalDown { get; set; }
+    public UdpHop4Ray? udpHop { get; set; }
 }
 
 public class AccountsItem4Ray
